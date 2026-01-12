@@ -1,0 +1,206 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Infographic Creator",
+        "formFields": {
+          "values": [
+            {
+              "fieldName": "Video Link ",
+              "fieldLabel": "What's the video link?",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.4,
+      "position": [
+        304,
+        -208
+      ],
+      "id": "79b64711-6e8e-4b77-8166-388501340bb6",
+      "name": "On form submission",
+      "webhookId": "5f5f0506-393b-4ca3-81af-bc56abf351d0"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.apify.com/v2/acts/pintostudio~youtube-transcript-scraper/runs",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "token",
+              "value": "apify_api_6UZ6zGpt7XWFJD5iI1MyDx9o5zoRqU3wzxys"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"videoUrl\": \"https://www.youtube.com/watch?v=8KkKuTCFvzI\"\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        496,
+        -48
+      ],
+      "id": "e948a9f5-764b-402c-af52-3bf5a364c9ff",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-pro-image-preview",
+          "mode": "list",
+          "cachedResultName": "models/gemini-3-pro-image-preview (Nano Banana Pro)"
+        },
+        "prompt": "=YouTube Video Transcript:\n{{ $json.data.map(x => x.text).join(' ') }}\n\nTask:\nAnalyze the video content to extract:\n1. The core thesis or central idea.\n2. 4–6 distinct mental models or key arguments.\n3. The conclusion and any future-oriented insight.\n\nThen generate high-resolution sketchnote / whiteboard-style infographic images that visually explain the content.\n\nVisual & Design Instructions:\n- Aspect ratio: 16:9\n- Style: clean sketchnote / whiteboard / hand-drawn infographic\n- Background: white\n- Text: critical text must be perfectly legible, accurate, and minimal\n- Layout:\n  - Core thesis placed at the center\n  - Mental models / arguments arranged around the center using arrows and connectors\n  - Conclusion placed in the bottom-right corner inside a bubble or boxed container\n- Use arrows, connectors, and grouping to show relationships\n- Use simple illustrative icons (brain, lightbulb, arrows, future/clock icons)\n- Maintain clear visual hierarchy and spacing\n- Avoid clutter; prioritize clarity over decoration\n\nImage Requirements:\n- Output 16–9 high-resolution infographic images \n- All images must be in 16:9 format\n- Each image should focus on a clear grouping or perspective of the ideas\n- Ensure all text elements are readable and correctly spelled\n- Diagrams should look instructional and professional\n\nImportant:\n- Do not include timestamps\n- Do not include raw transcript text\n- Do not include explanations outside the visuals\n- Focus on accuracy, structure, and clarity\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -208
+      ],
+      "id": "90a356c9-28b5-48bb-90c4-cc7a505f485b",
+      "name": "Generate an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "G86cGhbc5lYXJHhg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.cloudinary.com/v1_1/dhffnfryo/image/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "upload_preset",
+              "value": "youtube_summary"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        928,
+        -32
+      ],
+      "id": "87584fc2-cc89-4333-947e-3f54c1cbe135",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "redirect",
+        "redirectUrl": "={{ $json.secure_url }}",
+        "limitWaitTime": true,
+        "resumeAmount": 3,
+        "resumeUnit": "minutes",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.4,
+      "position": [
+        1136,
+        -208
+      ],
+      "id": "2665d3c5-7b72-43c0-b45e-f83bd597ace3",
+      "name": "Form",
+      "webhookId": "97fcc7cc-ee38-4b53-b33e-0b18ad5dce09"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Generate an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate an image": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "6708a604-82f7-4111-b739-a151cdd9aa2b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "137f971d582bc497de0f09ef3775b09ad110b2ab14c99999e01b5e4aab320b8f"
+  },
+  "id": "qa6Ca6h1HJ0ZwTe5RrW00",
+  "tags": []
+}
